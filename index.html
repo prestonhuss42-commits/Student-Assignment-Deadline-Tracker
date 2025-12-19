@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Assignment & Deadline Tracker</title>
+  <style>
+    body {
+      font-family: system-ui, Arial, sans-serif;
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      margin: 0;
+      padding: 20px;
+      color: #111;
+    }
+
+    h1 {
+      text-align: center;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    input, button, select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    button {
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+      border: none;
+      font-weight: 600;
+    }
+
+    button:hover {
+      background: #1e40af;
+    }
+
+    .assignment {
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .info {
+      flex: 1;
+    }
+
+    .today { background: #fde68a; }
+    .week { background: #bbf7d0; }
+    .overdue { background: #fecaca; }
+    .done { background: #e5e7eb; text-decoration: line-through; }
+
+    .small {
+      font-size: 0.85em;
+      color: #374151;
+    }
+
+    .actions button {
+      margin-left: 5px;
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    .complete {
+      background: #16a34a;
+    }
+
+    .delete {
+      background: #dc2626;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <h1>📘 Assignment & Deadline Tracker</h1>
+
+  <div class="container">
+    <div class="form">
+      <input id="className" placeholder="Class name" />
+      <input id="title" placeholder="Assignment title" />
+      <input id="dueDate" type="date" />
+      <button onclick="addAssignment()">Add Assignment</button>
+    </div>
+
+    <div class="stats">
+      <div id="total"></div>
+      <div id="remaining"></div>
+      <div id="completed"></div>
+    </div>
+
+    <div id="list"></div>
+  </div>
+
+  <script>
+    let assignments = JSON.parse(localStorage.getItem('assignments')) || [];
+
+    function save() {
+      localStorage.setItem('assignments', JSON.stringify(assignments));
+    }
+
+    function addAssignment() {
+      const className = document.getElementById('className').value;
+      const title = document.getElementById('title').value;
+      const dueDate = document.getElementById('dueDate').value;
+
+      if (!className || !title || !dueDate) return alert('Fill everything');
+
+      assignments.push({ className, title, dueDate, completed: false });
+      save();
+      render();
+    }
+
+    function toggleComplete(index) {
+      assignments[index].completed = !assignments[index].completed;
+      save();
+      render();
+    }
+
+    function deleteAssignment(index) {
+      assignments.splice(index, 1);
+      save();
+      render();
+    }
+
+    function daysUntil(date) {
+      const now = new Date();
+      const due = new Date(date);
+      return Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+    }
+
+    function render() {
+      const list = document.getElementById('list');
+      list.innerHTML = '';
+
+      let completedCount = 0;
+
+      assignments.forEach((a, index) => {
+        const d = daysUntil(a.dueDate);
+        const div = document.createElement('div');
+        div.className = 'assignment';
+
+        if (a.completed) {
+          div.classList.add('done');
+          completedCount++;
+        } else if (d < 0) div.classList.add('overdue');
+        else if (d === 0) div.classList.add('today');
+        else if (d <= 7) div.classList.add('week');
+
+        div.innerHTML = `
+          <div class="info">
+            <strong>${a.className}</strong> – ${a.title}<br>
+            <span class="small">Due: ${a.dueDate} (${a.completed ? 'Completed' : d < 0 ? 'Overdue' : d + ' days left'})</span>
+          </div>
+          <div class="actions">
+            <button class="complete" onclick="toggleComplete(${index})">✓</button>
+            <button class="delete" onclick="deleteAssignment(${index})">✕</button>
+          </div>
+        `;
+
+        list.appendChild(div);
+      });
+
+      document.getElementById('total').innerText = `Total: ${assignments.length}`;
+      document.getElementById('remaining').innerText = `Remaining: ${assignments.length - completedCount}`;
+      document.getElementById('completed').innerText = `Completed: ${completedCount}`;
+    }
+
+    render();
+  </script>
+</body>
+</html>
+
